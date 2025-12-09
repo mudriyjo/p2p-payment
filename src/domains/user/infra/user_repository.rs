@@ -127,7 +127,7 @@ impl UserRepository for PostgresUserRepository {
     }
 
     async fn search(&self, query: &str, limit: i64) -> Result<Vec<User>, AppError> {
-        use sea_orm::sea_query::{Expr, SimpleExpr};
+        use sea_orm::sea_query::{SimpleExpr};
 
         let search_pattern = format!("%{}%", query);
 
