@@ -1,8 +1,6 @@
 use std::sync::Arc;
-use axum::Server;
 use color_eyre::eyre::Result;
-use std::net::SocketAddr;
-use clean_axum_demo::{app::create_app, common::bootstrap};
+use p2p_payment::{app::create_app, common::bootstrap};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -10,18 +8,13 @@ async fn main() -> Result<()> {
 
     let app = create_app(Arc::clone(&state));
 
-    let addr: SocketAddr = state
-        .config
-        .server_address()
-        .parse()
-        .expect("Invalid server address");
+    let addr = state.config.server_address();
 
     tracing::info!("🚀 Server starting on http://{}", addr);
     tracing::info!("📚 API docs available at http://{}/docs", addr);
 
-    Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await?;
+    let listener = tokio::net::TcpListener::bind(&addr).await?;
+    axum::serve(listener, app).await?;
 
     Ok(())
 }

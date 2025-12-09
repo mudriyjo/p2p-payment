@@ -9,11 +9,16 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(Post::Table)
+                    .table(Users::Table)
                     .if_not_exists()
-                    .col(pk_auto(Post::Id))
-                    .col(string(Post::Title))
-                    .col(string(Post::Text))
+                    .col(uuid(Users::Id).primary_key())
+                    .col(string(Users::Username).unique_key().not_null())
+                    .col(string(Users::Email).unique_key().not_null())
+                    .col(string(Users::PasswordHash).not_null())
+                    .col(boolean(Users::IsActive).not_null().default(true))
+                    .col(boolean(Users::IsAdmin).not_null().default(false))
+                    .col(timestamp_with_time_zone(Users::CreatedAt).not_null())
+                    .col(timestamp_with_time_zone(Users::UpdatedAt).not_null())
                     .to_owned(),
             )
             .await
@@ -21,15 +26,20 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Post::Table).to_owned())
+            .drop_table(Table::drop().table(Users::Table).to_owned())
             .await
     }
 }
 
 #[derive(DeriveIden)]
-enum Post {
+enum Users {
     Table,
     Id,
-    Title,
-    Text,
+    Username,
+    Email,
+    PasswordHash,
+    IsActive,
+    IsAdmin,
+    CreatedAt,
+    UpdatedAt,
 }

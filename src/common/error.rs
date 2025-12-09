@@ -93,6 +93,25 @@ impl From<sqlx::Error> for AppError {
     }
 }
 
+impl From<sea_orm::DbErr> for AppError {
+    fn from(err: sea_orm::DbErr) -> Self {
+        tracing::error!("Database error: {:?}", err);
+
+        match err {
+            sea_orm::DbErr::RecordNotFound(_) => {
+                AppError::NotFound("Record not found".to_string())
+            }
+            sea_orm::DbErr::Query(runtime_err) => {
+                AppError::DatabaseError(runtime_err.to_string())
+            }
+            sea_orm::DbErr::Conn(runtime_err) => {
+                AppError::DatabaseError(format!("Connection error: {}", runtime_err))
+            }
+            _ => AppError::DatabaseError(err.to_string()),
+        }
+    }
+}
+
 impl From<jsonwebtoken::errors::Error> for AppError {
     fn from(err: jsonwebtoken::errors::Error) -> Self {
         tracing::error!("JWT error: {:?}", err);

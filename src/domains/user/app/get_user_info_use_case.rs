@@ -60,4 +60,23 @@ impl GetUserInfoUseCase {
 
         self.user_repository.list(limit, offset).await
     }
+
+    /// Поиск пользователей
+    pub async fn search(
+        &self,
+        query: &str,
+        limit: Option<i64>,
+    ) -> Result<Vec<User>, AppError> {
+        let search_limit = limit.unwrap_or(20);
+
+        if search_limit > 100 {
+            return Err(AppError::ValidationError(
+                "Limit cannot exceed 100".to_string(),
+            ));
+        }
+
+        tracing::debug!("Searching users with query='{}', limit={}", query, search_limit);
+
+        self.user_repository.search(query, search_limit).await
+    }
 }

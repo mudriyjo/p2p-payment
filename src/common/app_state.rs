@@ -1,21 +1,19 @@
 use std::sync::Arc;
-use sqlx::PgPool;
+use sea_orm::DatabaseConnection;
 
 // Repositories
 use crate::domains::user::domain::repository::UserRepository;
-use crate::domains::user::PostgresUserRepository;
+use crate::domains::user::infra::user_repository::PostgresUserRepository;
 
 // User Use Cases
-use crate::domains::user::app::{
-    GetUserInfoUseCase,
-    // UpdateProfileUseCase,
-    // DeleteUserUseCase,
-};
+use crate::domains::user::app::get_user_info_use_case::GetUserInfoUseCase;
 
 // Services
 use crate::common::jwt::JwtService;
+use crate::common::Config;
 
 pub struct AppState {
+    pub config: Config,
     pub user_repository: Arc<dyn UserRepository>,
     pub jwt_service: Arc<JwtService>,
     pub user_get_use_case: Arc<GetUserInfoUseCase>,
@@ -24,11 +22,11 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(pool: PgPool, jwt_secret: String) -> Self {
-        let user_repository: Arc<dyn UserRepository> = 
-            Arc::new(PostgresUserRepository::new(pool.clone()));
-        
-        let jwt_service = Arc::new(JwtService::new(&jwt_secret));
+    pub fn new(db: DatabaseConnection, config: Config) -> Self {
+        let user_repository: Arc<dyn UserRepository> =
+            Arc::new(PostgresUserRepository::new(db));
+
+        let jwt_service = Arc::new(JwtService::new(&config.jwt_secret_key));
 
         let user_get_use_case = Arc::new(GetUserInfoUseCase::new(
             Arc::clone(&user_repository),
@@ -43,6 +41,7 @@ impl AppState {
         // ));
 
         Self {
+            config,
             user_repository,
             jwt_service,
             user_get_use_case,

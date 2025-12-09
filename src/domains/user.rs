@@ -16,7 +16,8 @@ pub mod dto {
     pub mod user_dto;
 }
 
-mod infra {
+pub mod infra {
+    pub mod user_entity;
     pub mod user_repository;
 }
 

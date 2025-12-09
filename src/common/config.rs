@@ -13,6 +13,7 @@ pub struct Config {
     pub service_port: u32,
 
     pub logging_level: String,
+    pub jwt_secret_key: String,
 }
 
 impl Config {
@@ -22,6 +23,14 @@ impl Config {
         let config: Config = Figment::new().merge(Env::prefixed("P2P_APP_")).extract()?;
 
         Ok(config)
+    }
+
+    pub fn server_address(&self) -> String {
+        format!("{}:{}", self.service_host, self.service_port)
+    }
+
+    pub async fn create_database_pool(&self) -> Result<DatabaseConnection> {
+        setup_database(self).await
     }
 }
 

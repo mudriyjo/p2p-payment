@@ -34,11 +34,12 @@ pub fn create_app(state: Arc<AppState>) -> Router {
 }
 
 fn api_routes(state: Arc<AppState>) -> Router {
+    use axum::Extension;
+
     Router::new()
-    // TODO: check correctnes of using state
-    // .merge(crate::domains::user::api::user_routes(Arc::clone(&state)))
-                .merge(crate::domains::user::public_user_routes())
+        .merge(crate::domains::user::public_user_routes())
         .merge(crate::domains::user::protected_user_routes())
+        .layer(Extension(state))
 }
 
 async fn health_check() -> impl IntoResponse {

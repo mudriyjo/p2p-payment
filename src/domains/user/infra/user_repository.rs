@@ -1,179 +1,114 @@
 use async_trait::async_trait;
-use sqlx::PgPool;
+use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, QueryOrder, QuerySelect, Set, ActiveModelTrait, PaginatorTrait};
 use uuid::Uuid;
+use chrono::Utc;
 use crate::common::error::AppError;
 use crate::domains::user::domain::{
     model::User,
     repository::UserRepository,
 };
+use super::user_entity::{self, Entity as UserEntity};
 
 pub struct PostgresUserRepository {
-    pool: PgPool,
+    db: DatabaseConnection,
 }
 
 impl PostgresUserRepository {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
+    pub fn new(db: DatabaseConnection) -> Self {
+        Self { db }
+    }
+
+    fn entity_to_domain(entity: user_entity::Model) -> User {
+        User {
+            id: entity.id,
+            username: entity.username,
+            email: entity.email,
+            password_hash: entity.password_hash,
+            is_active: entity.is_active,
+            is_admin: entity.is_admin,
+            created_at: entity.created_at.with_timezone(&Utc),
+            updated_at: entity.updated_at.with_timezone(&Utc),
+        }
+    }
+
+    fn domain_to_active_model(user: User) -> user_entity::ActiveModel {
+        user_entity::ActiveModel {
+            id: Set(user.id),
+            username: Set(user.username),
+            email: Set(user.email),
+            password_hash: Set(user.password_hash),
+            is_active: Set(user.is_active),
+            is_admin: Set(user.is_admin),
+            created_at: Set(user.created_at.into()),
+            updated_at: Set(user.updated_at.into()),
+        }
     }
 }
 
 #[async_trait]
 impl UserRepository for PostgresUserRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<User>, AppError> {
-        let user = sqlx::query_as!(
-            User,
-            r#"
-            SELECT id, username, email, password_hash, bio, phone, 
-                   avatar_file_id, is_active, is_admin, created_at, updated_at
-            FROM users
-            WHERE id = $1
-            "#,
-            id
-        )
-        .fetch_optional(&self.pool)
-        .await?;
+        let user = UserEntity::find_by_id(id)
+            .one(&self.db)
+            .await?;
 
-        Ok(user)
+        Ok(user.map(Self::entity_to_domain))
     }
 
     async fn find_by_username(&self, username: &str) -> Result<Option<User>, AppError> {
-        let user = sqlx::query_as!(
-            User,
-            r#"
-            SELECT id, username, email, password_hash, bio, phone,
-                   avatar_file_id, is_active, is_admin, created_at, updated_at
-            FROM users
-            WHERE username = $1
-            "#,
-            username
-        )
-        .fetch_optional(&self.pool)
-        .await?;
+        let user = UserEntity::find()
+            .filter(user_entity::Column::Username.eq(username))
+            .one(&self.db)
+            .await?;
 
-        Ok(user)
+        Ok(user.map(Self::entity_to_domain))
     }
 
     async fn find_by_email(&self, email: &str) -> Result<Option<User>, AppError> {
-        let user = sqlx::query_as!(
-            User,
-            r#"
-            SELECT id, username, email, password_hash, bio, phone,
-                   avatar_file_id, is_active, is_admin, created_at, updated_at
-            FROM users
-            WHERE email = $1
-            "#,
-            email
-        )
-        .fetch_optional(&self.pool)
-        .await?;
+        let user = UserEntity::find()
+            .filter(user_entity::Column::Email.eq(email))
+            .one(&self.db)
+            .await?;
 
-        Ok(user)
+        Ok(user.map(Self::entity_to_domain))
     }
 
 
 
     async fn exists_by_username(&self, username: &str) -> Result<bool, AppError> {
-        let result = sqlx::query!(
-            r#"
-            SELECT EXISTS(SELECT 1 FROM users WHERE username = $1) as "exists!"
-            "#,
-            username
-        )
-        .fetch_one(&self.pool)
-        .await?;
+        let count = UserEntity::find()
+            .filter(user_entity::Column::Username.eq(username))
+            .count(&self.db)
+            .await?;
 
-        Ok(result.exists)
+        Ok(count > 0)
     }
 
     async fn exists_by_email(&self, email: &str) -> Result<bool, AppError> {
-        let result = sqlx::query!(
-            r#"
-            SELECT EXISTS(SELECT 1 FROM users WHERE email = $1) as "exists!"
-            "#,
-            email
-        )
-        .fetch_one(&self.pool)
-        .await?;
+        let count = UserEntity::find()
+            .filter(user_entity::Column::Email.eq(email))
+            .count(&self.db)
+            .await?;
 
-        Ok(result.exists)
+        Ok(count > 0)
     }
 
     async fn create(&self, user: User) -> Result<User, AppError> {
-        let created_user = sqlx::query_as!(
-            User,
-            r#"
-            INSERT INTO users (
-                id, username, email, password_hash, bio, phone,
-                avatar_file_id, is_active, is_admin, created_at, updated_at
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING id, username, email, password_hash, bio, phone,
-                      avatar_file_id, is_active, is_admin, created_at, updated_at
-            "#,
-            user.id,
-            user.username,
-            user.email,
-            user.password_hash,
-            user.bio,
-            user.phone,
-            user.avatar_file_id,
-            user.is_active,
-            user.is_admin,
-            user.created_at,
-            user.updated_at
-        )
-        .fetch_one(&self.pool)
-        .await?;
-
-        Ok(created_user)
+        let active_model = Self::domain_to_active_model(user);
+        let result = active_model.insert(&self.db).await?;
+        Ok(Self::entity_to_domain(result))
     }
 
     async fn update(&self, user: User) -> Result<User, AppError> {
-        let updated_user = sqlx::query_as!(
-            User,
-            r#"
-            UPDATE users
-            SET username = $2,
-                email = $3,
-                password_hash = $4,
-                bio = $5,
-                phone = $6,
-                avatar_file_id = $7,
-                is_active = $8,
-                is_admin = $9,
-                updated_at = $10
-            WHERE id = $1
-            RETURNING id, username, email, password_hash, bio, phone,
-                      avatar_file_id, is_active, is_admin, created_at, updated_at
-            "#,
-            user.id,
-            user.username,
-            user.email,
-            user.password_hash,
-            user.bio,
-            user.phone,
-            user.avatar_file_id,
-            user.is_active,
-            user.is_admin,
-            user.updated_at
-        )
-        .fetch_one(&self.pool)
-        .await?;
-
-        Ok(updated_user)
+        let active_model = Self::domain_to_active_model(user);
+        let result = active_model.update(&self.db).await?;
+        Ok(Self::entity_to_domain(result))
     }
 
     async fn delete(&self, id: Uuid) -> Result<(), AppError> {
-        let result = sqlx::query!(
-            r#"
-            DELETE FROM users WHERE id = $1
-            "#,
-            id
-        )
-        .execute(&self.pool)
-        .await?;
+        let result = UserEntity::delete_by_id(id).exec(&self.db).await?;
 
-        if result.rows_affected() == 0 {
+        if result.rows_affected == 0 {
             return Err(AppError::NotFound(format!("User {} not found", id)));
         }
 
@@ -181,69 +116,45 @@ impl UserRepository for PostgresUserRepository {
     }
 
     async fn list(&self, limit: i64, offset: i64) -> Result<Vec<User>, AppError> {
-        let users = sqlx::query_as!(
-            User,
-            r#"
-            SELECT id, username, email, password_hash, bio, phone,
-                   avatar_file_id, is_active, is_admin, created_at, updated_at
-            FROM users
-            ORDER BY created_at DESC
-            LIMIT $1 OFFSET $2
-            "#,
-            limit,
-            offset
-        )
-        .fetch_all(&self.pool)
-        .await?;
+        let users = UserEntity::find()
+            .order_by_desc(user_entity::Column::CreatedAt)
+            .limit(limit as u64)
+            .offset(offset as u64)
+            .all(&self.db)
+            .await?;
 
-        Ok(users)
+        Ok(users.into_iter().map(Self::entity_to_domain).collect())
     }
 
     async fn search(&self, query: &str, limit: i64) -> Result<Vec<User>, AppError> {
-        let search_pattern = format!("%{}%", query);
-        
-        let users = sqlx::query_as!(
-            User,
-            r#"
-            SELECT id, username, email, password_hash, bio, phone,
-                   avatar_file_id, is_active, is_admin, created_at, updated_at
-            FROM users
-            WHERE username ILIKE $1 OR email ILIKE $1
-            ORDER BY username
-            LIMIT $2
-            "#,
-            search_pattern,
-            limit
-        )
-        .fetch_all(&self.pool)
-        .await?;
+        use sea_orm::sea_query::{Expr, SimpleExpr};
 
-        Ok(users)
+        let search_pattern = format!("%{}%", query);
+
+        let users = UserEntity::find()
+            .filter(
+                user_entity::Column::Username.like(&search_pattern)
+                    .or(user_entity::Column::Email.like(&search_pattern))
+            )
+            .order_by_asc(user_entity::Column::Username)
+            .limit(limit as u64)
+            .all(&self.db)
+            .await?;
+
+        Ok(users.into_iter().map(Self::entity_to_domain).collect())
     }
 
     async fn is_admin(&self, id: Uuid) -> Result<bool, AppError> {
-        let result = sqlx::query!(
-            r#"
-            SELECT is_admin FROM users WHERE id = $1
-            "#,
-            id
-        )
-        .fetch_optional(&self.pool)
-        .await?;
+        let user = UserEntity::find_by_id(id)
+            .one(&self.db)
+            .await?;
 
-        Ok(result.map(|r| r.is_admin).unwrap_or(false))
+        Ok(user.map(|u| u.is_admin).unwrap_or(false))
     }
 
     async fn count(&self) -> Result<i64, AppError> {
-        let result = sqlx::query!(
-            r#"
-            SELECT COUNT(*) as "count!" FROM users
-            "#
-        )
-        .fetch_one(&self.pool)
-        .await?;
-
-        Ok(result.count)
+        let count = UserEntity::find().count(&self.db).await?;
+        Ok(count as i64)
     }
 }
 

@@ -1,7 +1,7 @@
 [package]
 name = "p2p-payment"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [package.metadata.sqlx]
 database_url = "P2P_APP_DATABASE_URL"
