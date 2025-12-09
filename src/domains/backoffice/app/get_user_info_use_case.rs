@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
-use crate::{common::error::AppError, domains::user::{UserRepository, domain::model::User}};
+use crate::{common::error::AppError, domains::backoffice::{UserRepository, domain::model::User}};
 
 pub struct GetUserInfoUseCase {
     user_repository: Arc<dyn UserRepository>

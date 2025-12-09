@@ -37,8 +37,8 @@ fn api_routes(state: Arc<AppState>) -> Router {
     use axum::Extension;
 
     Router::new()
-        .merge(crate::domains::user::public_user_routes())
-        .merge(crate::domains::user::protected_user_routes())
+        .merge(crate::domains::backoffice::public_user_routes())
+        .merge(crate::domains::backoffice::protected_user_routes())
         .layer(Extension(state))
 }
 
@@ -72,7 +72,7 @@ mod tests {
     #[test]
     fn test_health_response_structure() {
         let response = HealthResponse {
-            status: "healthy".to_string(),
+            status: "Ok".to_string(),
             version: "1.0.0".to_string(),
         };
 

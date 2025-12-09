@@ -7,18 +7,22 @@ use crate::common::error::AppError;
 pub struct Claims {
     pub sub: String,
     pub user_id: Uuid,
+    pub role_id: Uuid,
+    pub role_name: String,
     pub exp: i64,
     pub iat: i64,
 }
 
 impl Claims {
-    pub fn new(user_id: Uuid, expiration_hours: i64) -> Self {
+    pub fn new(user_id: Uuid, role_id: Uuid, role_name: String, expiration_hours: i64) -> Self {
         let now = Utc::now();
         let exp = now + Duration::hours(expiration_hours);
 
         Self {
             sub: user_id.to_string(),
             user_id,
+            role_id,
+            role_name: role_name.clone(),
             exp: exp.timestamp(),
             iat: now.timestamp(),
         }
@@ -26,6 +30,14 @@ impl Claims {
 
     pub fn is_expired(&self) -> bool {
         Utc::now().timestamp() > self.exp
+    }
+
+    pub fn is_admin(&self) -> bool {
+        self.role_name == "Admin"
+    }
+
+    pub fn has_role(&self, role_name: &str) -> bool {
+        self.role_name == role_name
     }
 }
 
@@ -48,8 +60,8 @@ impl JwtService {
         }
     }
 
-    pub fn encode_token(&self, user_id: Uuid) -> Result<String, AppError> {
-        let claims = Claims::new(user_id, 24);       
+    pub fn encode_token(&self, user_id: Uuid, role_id: Uuid, role_name: String) -> Result<String, AppError> {
+        let claims = Claims::new(user_id, role_id, role_name, 24);
         let token = encode(&Header::default(), &claims, &self.encoding_key)?;
         Ok(token)
     }
@@ -57,9 +69,11 @@ impl JwtService {
     pub fn encode_token_with_expiration(
         &self,
         user_id: Uuid,
+        role_id: Uuid,
+        role_name: String,
         expiration_hours: i64,
     ) -> Result<String, AppError> {
-        let claims = Claims::new(user_id, expiration_hours);
+        let claims = Claims::new(user_id, role_id, role_name, expiration_hours);
         let token = encode(&Header::default(), &claims, &self.encoding_key)?;
         Ok(token)
     }
@@ -90,16 +104,23 @@ impl JwtService {
 mod tests {
     use super::*;
 
+    fn test_role_id() -> Uuid {
+        Uuid::parse_str("eec86d00-495c-490c-b151-b9d33672a681").unwrap()
+    }
+
     #[test]
     fn test_encode_and_decode_token() {
         let jwt_service = JwtService::new("test_secret_key");
         let user_id = Uuid::new_v4();
+        let role_id = test_role_id();
 
-        let token = jwt_service.encode_token(user_id).unwrap();
+        let token = jwt_service.encode_token(user_id, role_id, "User".to_string()).unwrap();
         assert!(!token.is_empty());
 
         let claims = jwt_service.decode_token(&token).unwrap();
         assert_eq!(claims.user_id, user_id);
+        assert_eq!(claims.role_id, role_id);
+        assert_eq!(claims.role_name, "User");
         assert!(!claims.is_expired());
     }
 
@@ -116,9 +137,10 @@ mod tests {
     fn test_token_with_different_secret() {
         let jwt_service1 = JwtService::new("secret1");
         let jwt_service2 = JwtService::new("secret2");
-        
+
         let user_id = Uuid::new_v4();
-        let token = jwt_service1.encode_token(user_id).unwrap();
+        let role_id = test_role_id();
+        let token = jwt_service1.encode_token(user_id, role_id, "User".to_string()).unwrap();
 
         let result = jwt_service2.decode_token(&token);
         assert!(result.is_err());
@@ -127,11 +149,34 @@ mod tests {
     #[test]
     fn test_claims_expiration() {
         let user_id = Uuid::new_v4();
-        
-        let mut claims = Claims::new(user_id, -1);
+        let role_id = test_role_id();
+
+        let mut claims = Claims::new(user_id, role_id, "User".to_string(), -1);
         assert!(claims.is_expired());
 
-        claims = Claims::new(user_id, 24);
+        claims = Claims::new(user_id, role_id, "User".to_string(), 24);
         assert!(!claims.is_expired());
+    }
+
+    #[test]
+    fn test_claims_is_admin() {
+        let user_id = Uuid::new_v4();
+        let admin_role_id = Uuid::parse_str("878c19c6-643b-4a57-98f1-a60786a38a92").unwrap();
+
+        let admin_claims = Claims::new(user_id, admin_role_id, "Admin".to_string(), 24);
+        assert!(admin_claims.is_admin());
+
+        let user_claims = Claims::new(user_id, test_role_id(), "User".to_string(), 24);
+        assert!(!user_claims.is_admin());
+    }
+
+    #[test]
+    fn test_claims_has_role() {
+        let user_id = Uuid::new_v4();
+        let role_id = test_role_id();
+
+        let claims = Claims::new(user_id, role_id, "Support".to_string(), 24);
+        assert!(claims.has_role("Support"));
+        assert!(!claims.has_role("Admin"));
     }
 }

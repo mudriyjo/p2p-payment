@@ -1,13 +1,15 @@
 use async_trait::async_trait;
-use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, QueryOrder, QuerySelect, Set, ActiveModelTrait, PaginatorTrait};
+use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, QueryOrder, QuerySelect, Set, ActiveModelTrait, PaginatorTrait, ModelTrait};
 use uuid::Uuid;
 use chrono::Utc;
 use crate::common::error::AppError;
-use crate::domains::user::domain::{
+use crate::domains::backoffice::domain::{
     model::User,
     repository::UserRepository,
 };
+use crate::domains::backoffice::role::model::Role;
 use super::user_entity::{self, Entity as UserEntity};
+use super::super::role::entity::{self as role_entity, Entity as RoleEntity};
 
 pub struct PostgresUserRepository {
     db: DatabaseConnection,
@@ -18,16 +20,24 @@ impl PostgresUserRepository {
         Self { db }
     }
 
-    fn entity_to_domain(entity: user_entity::Model) -> User {
+    fn entity_to_domain(user_entity: user_entity::Model, role_entity: role_entity::Model) -> User {
+        let role = Role {
+            role_id: role_entity.role_id,
+            role_name: role_entity.role_name,
+            role_description: role_entity.role_description,
+            created_at: role_entity.created_at.with_timezone(&Utc),
+            updated_at: role_entity.updated_at.with_timezone(&Utc),
+        };
+
         User {
-            id: entity.id,
-            username: entity.username,
-            email: entity.email,
-            password_hash: entity.password_hash,
-            is_active: entity.is_active,
-            is_admin: entity.is_admin,
-            created_at: entity.created_at.with_timezone(&Utc),
-            updated_at: entity.updated_at.with_timezone(&Utc),
+            id: user_entity.id,
+            username: user_entity.username,
+            email: user_entity.email,
+            password_hash: user_entity.password_hash,
+            is_active: user_entity.is_active,
+            role,
+            created_at: user_entity.created_at.with_timezone(&Utc),
+            updated_at: user_entity.updated_at.with_timezone(&Utc),
         }
     }
 
@@ -38,7 +48,7 @@ impl PostgresUserRepository {
             email: Set(user.email),
             password_hash: Set(user.password_hash),
             is_active: Set(user.is_active),
-            is_admin: Set(user.is_admin),
+            role_id: Set(user.role.role_id),
             created_at: Set(user.created_at.into()),
             updated_at: Set(user.updated_at.into()),
         }
@@ -48,29 +58,41 @@ impl PostgresUserRepository {
 #[async_trait]
 impl UserRepository for PostgresUserRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<User>, AppError> {
-        let user = UserEntity::find_by_id(id)
+        let result = UserEntity::find_by_id(id)
+            .find_also_related(RoleEntity)
             .one(&self.db)
             .await?;
 
-        Ok(user.map(Self::entity_to_domain))
+        match result {
+            Some((user, Some(role))) => Ok(Some(Self::entity_to_domain(user, role))),
+            _ => Ok(None),
+        }
     }
 
     async fn find_by_username(&self, username: &str) -> Result<Option<User>, AppError> {
-        let user = UserEntity::find()
+        let result = UserEntity::find()
             .filter(user_entity::Column::Username.eq(username))
+            .find_also_related(RoleEntity)
             .one(&self.db)
             .await?;
 
-        Ok(user.map(Self::entity_to_domain))
+        match result {
+            Some((user, Some(role))) => Ok(Some(Self::entity_to_domain(user, role))),
+            _ => Ok(None),
+        }
     }
 
     async fn find_by_email(&self, email: &str) -> Result<Option<User>, AppError> {
-        let user = UserEntity::find()
+        let result = UserEntity::find()
             .filter(user_entity::Column::Email.eq(email))
+            .find_also_related(RoleEntity)
             .one(&self.db)
             .await?;
 
-        Ok(user.map(Self::entity_to_domain))
+        match result {
+            Some((user, Some(role))) => Ok(Some(Self::entity_to_domain(user, role))),
+            _ => Ok(None),
+        }
     }
 
 
@@ -94,15 +116,25 @@ impl UserRepository for PostgresUserRepository {
     }
 
     async fn create(&self, user: User) -> Result<User, AppError> {
+        let user_id = user.id;
         let active_model = Self::domain_to_active_model(user);
-        let result = active_model.insert(&self.db).await?;
-        Ok(Self::entity_to_domain(result))
+        active_model.insert(&self.db).await?;
+
+        // Re-fetch with role
+        self.find_by_id(user_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound(format!("User {} not found after creation", user_id)))
     }
 
     async fn update(&self, user: User) -> Result<User, AppError> {
+        let user_id = user.id;
         let active_model = Self::domain_to_active_model(user);
-        let result = active_model.update(&self.db).await?;
-        Ok(Self::entity_to_domain(result))
+        active_model.update(&self.db).await?;
+
+        // Re-fetch with role
+        self.find_by_id(user_id)
+            .await?
+            .ok_or_else(|| AppError::NotFound(format!("User {} not found after update", user_id)))
     }
 
     async fn delete(&self, id: Uuid) -> Result<(), AppError> {
@@ -116,22 +148,25 @@ impl UserRepository for PostgresUserRepository {
     }
 
     async fn list(&self, limit: i64, offset: i64) -> Result<Vec<User>, AppError> {
-        let users = UserEntity::find()
+        let results = UserEntity::find()
+            .find_also_related(RoleEntity)
             .order_by_desc(user_entity::Column::CreatedAt)
             .limit(limit as u64)
             .offset(offset as u64)
             .all(&self.db)
             .await?;
 
-        Ok(users.into_iter().map(Self::entity_to_domain).collect())
+        Ok(results
+            .into_iter()
+            .filter_map(|(user, role)| role.map(|r| Self::entity_to_domain(user, r)))
+            .collect())
     }
 
     async fn search(&self, query: &str, limit: i64) -> Result<Vec<User>, AppError> {
-        use sea_orm::sea_query::{SimpleExpr};
-
         let search_pattern = format!("%{}%", query);
 
-        let users = UserEntity::find()
+        let results = UserEntity::find()
+            .find_also_related(RoleEntity)
             .filter(
                 user_entity::Column::Username.like(&search_pattern)
                     .or(user_entity::Column::Email.like(&search_pattern))
@@ -141,15 +176,15 @@ impl UserRepository for PostgresUserRepository {
             .all(&self.db)
             .await?;
 
-        Ok(users.into_iter().map(Self::entity_to_domain).collect())
+        Ok(results
+            .into_iter()
+            .filter_map(|(user, role)| role.map(|r| Self::entity_to_domain(user, r)))
+            .collect())
     }
 
     async fn is_admin(&self, id: Uuid) -> Result<bool, AppError> {
-        let user = UserEntity::find_by_id(id)
-            .one(&self.db)
-            .await?;
-
-        Ok(user.map(|u| u.is_admin).unwrap_or(false))
+        let user = self.find_by_id(id).await?;
+        Ok(user.map(|u| u.is_admin()).unwrap_or(false))
     }
 
     async fn count(&self) -> Result<i64, AppError> {

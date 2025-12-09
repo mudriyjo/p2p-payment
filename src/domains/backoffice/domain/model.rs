@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use super::super::role::model::Role;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct User {
@@ -9,7 +10,7 @@ pub struct User {
     pub email: String,
     pub password_hash: String,
     pub is_active: bool,
-    pub is_admin: bool,
+    pub role: Role,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -19,6 +20,7 @@ impl User {
         username: String,
         email: String,
         password_hash: String,
+        role: Role,
     ) -> Self {
         let now = Utc::now();
         Self {
@@ -27,7 +29,7 @@ impl User {
             email,
             password_hash,
             is_active: true,
-            is_admin: false,
+            role,
             created_at: now,
             updated_at: now,
         }
@@ -38,7 +40,15 @@ impl User {
     }
 
     pub fn is_admin(&self) -> bool {
-        self.is_admin
+        self.role.is_admin()
+    }
+
+    pub fn role(&self) -> &Role {
+        &self.role
+    }
+
+    pub fn has_role(&self, role_id: Uuid) -> bool {
+        self.role.role_id == role_id
     }
 
     pub fn update_username(&mut self, username: String) {
@@ -65,6 +75,27 @@ impl User {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::super::role::model::{user_role_id, admin_role_id};
+
+    fn create_test_user_role() -> Role {
+        Role::new(
+            user_role_id(),
+            "User".to_string(),
+            Some("Standard user access".to_string()),
+            Utc::now(),
+            Utc::now(),
+        )
+    }
+
+    fn create_test_admin_role() -> Role {
+        Role::new(
+            admin_role_id(),
+            "Admin".to_string(),
+            Some("Full system access".to_string()),
+            Utc::now(),
+            Utc::now(),
+        )
+    }
 
     #[test]
     fn test_create_new_user() {
@@ -72,12 +103,27 @@ mod tests {
             "testuser".to_string(),
             "test@example.com".to_string(),
             "hashed_password".to_string(),
+            create_test_user_role(),
         );
 
         assert_eq!(user.username, "testuser");
         assert_eq!(user.email, "test@example.com");
         assert!(user.is_active);
-        assert!(!user.is_admin);
+        assert!(!user.is_admin());
+        assert!(user.role().is_user());
+    }
+
+    #[test]
+    fn test_admin_user() {
+        let user = User::new(
+            "admin".to_string(),
+            "admin@example.com".to_string(),
+            "hashed_password".to_string(),
+            create_test_admin_role(),
+        );
+
+        assert!(user.is_admin());
+        assert!(user.role().is_admin());
     }
 
     #[test]
@@ -86,12 +132,13 @@ mod tests {
             "oldname".to_string(),
             "test@example.com".to_string(),
             "hash".to_string(),
+            create_test_user_role(),
         );
-        
+
         let old_updated_at = user.updated_at;
-        
+
         user.update_username("newname".to_string());
-        
+
         assert_eq!(user.username, "newname");
         assert!(user.updated_at > old_updated_at);
     }
@@ -102,12 +149,26 @@ mod tests {
             "testuser".to_string(),
             "test@example.com".to_string(),
             "hash".to_string(),
+            create_test_user_role(),
         );
 
         assert!(user.is_active());
-        
+
         user.deactivate();
-        
+
         assert!(!user.is_active());
+    }
+
+    #[test]
+    fn test_has_role() {
+        let user = User::new(
+            "testuser".to_string(),
+            "test@example.com".to_string(),
+            "hash".to_string(),
+            create_test_user_role(),
+        );
+
+        assert!(user.has_role(user_role_id()));
+        assert!(!user.has_role(admin_role_id()));
     }
 }

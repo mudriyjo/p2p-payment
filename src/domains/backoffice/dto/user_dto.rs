@@ -1,7 +1,13 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use crate::domains::user::domain::model::User;
+use crate::domains::backoffice::domain::model::User;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoleInfo {
+    pub role_id: String,
+    pub role_name: String,
+    pub role_description: Option<String>,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserResponse {
@@ -9,7 +15,7 @@ pub struct UserResponse {
     pub username: String,
     pub email: String,
     pub is_active: bool,
-    pub is_admin: bool,
+    pub role: RoleInfo,
     #[serde(with = "crate::common::time_formater")]
     pub created_at: DateTime<Utc>,
     #[serde(with = "crate::common::time_formater")]
@@ -23,7 +29,11 @@ impl From<User> for UserResponse {
             username: user.username,
             email: user.email,
             is_active: user.is_active,
-            is_admin: user.is_admin,
+            role: RoleInfo {
+                role_id: user.role.role_id.to_string(),
+                role_name: user.role.role_name,
+                role_description: user.role.role_description,
+            },
             created_at: user.created_at,
             updated_at: user.updated_at,
         }
@@ -65,13 +75,24 @@ pub struct DeleteUserRequest {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domains::backoffice::role::model::{Role, user_role_id};
+    use chrono::Utc;
 
     #[test]
     fn test_user_response_from_user() {
+        let role = Role::new(
+            user_role_id(),
+            "User".to_string(),
+            Some("Standard user access".to_string()),
+            Utc::now(),
+            Utc::now(),
+        );
+
         let user = User::new(
             "testuser".to_string(),
             "test@example.com".to_string(),
             "hash".to_string(),
+            role,
         );
 
         let response = UserResponse::from(user.clone());
@@ -80,7 +101,8 @@ mod tests {
         assert_eq!(response.username, "testuser");
         assert_eq!(response.email, "test@example.com");
         assert!(response.is_active);
-        assert!(!response.is_admin);
+        assert_eq!(response.role.role_name, "User");
+        assert!(!user.is_admin());
     }
 
     #[test]

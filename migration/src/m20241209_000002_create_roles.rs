@@ -1,15 +1,13 @@
 use sea_orm_migration::{prelude::*, schema::*};
-use uuid::Uuid;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
 
-// Fixed UUIDs for default roles (for idempotency)
-const ADMIN_ROLE_ID: &str = "00000000-0000-0000-0000-000000000001";
-const SUPPORT_ROLE_ID: &str = "00000000-0000-0000-0000-000000000002";
-const RISK_ROLE_ID: &str = "00000000-0000-0000-0000-000000000003";
-const FINANCE_ROLE_ID: &str = "00000000-0000-0000-0000-000000000004";
-const USER_ROLE_ID: &str = "00000000-0000-0000-0000-000000000005";
+const ADMIN_ROLE_ID: &str = "878c19c6-643b-4a57-98f1-a60786a38a92";
+const SUPPORT_ROLE_ID: &str = "e79d6652-5efb-43ae-9565-04b3d3fcfc0f";
+const RISK_ROLE_ID: &str = "48cd5981-0e75-4329-8e1d-57681e8715db";
+const FINANCE_ROLE_ID: &str = "2e457833-9393-4a8f-9c0e-4314e1425312";
+const USER_ROLE_ID: &str = "eec86d00-495c-490c-b151-b9d33672a681";
 
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {

@@ -10,7 +10,7 @@ use crate::common::{
     error::AppError,
     jwt::Claims,
 };
-use crate::domains::user::dto::user_dto::{
+use crate::domains::backoffice::dto::user_dto::{
     UserResponse, 
     // UpdateUserRequest, 
     ListUsersQuery,

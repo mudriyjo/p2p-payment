@@ -1,5 +1,5 @@
 use axum::{
-    routing::{get, patch, delete, post},
+    routing::{get},
     Router,
 };
 
