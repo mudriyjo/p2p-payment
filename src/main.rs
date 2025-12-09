@@ -1,48 +1,27 @@
-mod common;
-
-use axum::{
-    Extension, Router,
-    routing::{get},
-};
+use std::sync::Arc;
+use axum::Server;
 use color_eyre::eyre::Result;
-use migration::{Migrator, MigratorTrait};
-use tracing_error::ErrorLayer;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
-use crate::common::config::{Config, setup_database};
+use std::net::SocketAddr;
+use clean_axum_demo::{app::create_app, common::bootstrap};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    color_eyre::install()?;
+    let state = bootstrap::initialize_app().await?;
 
-    let fmt = tracing_subscriber::fmt::layer();
-    let filter = tracing_subscriber::EnvFilter::from_default_env();
+    let app = create_app(Arc::clone(&state));
 
-    tracing_subscriber::registry()
-        .with(filter)
-        .with(fmt)
-        .with(ErrorLayer::default())
-        .init();
+    let addr: SocketAddr = state
+        .config
+        .server_address()
+        .parse()
+        .expect("Invalid server address");
 
-    let config: Config = Config::from_env()?;
-    let connection_pool = setup_database(&config).await?;
+    tracing::info!("🚀 Server starting on http://{}", addr);
+    tracing::info!("📚 API docs available at http://{}/docs", addr);
 
-    Migrator::up(&connection_pool, None).await?;
-
-    let app = Router::new()
-        .route("/", get(hello_world))
-        .layer(Extension(connection_pool.clone()));
-
-    let server_start_string = format!("{}:{}", config.service_host, config.service_port);
-    let listener = tokio::net::TcpListener::bind(server_start_string)
-        .await
-        .unwrap();
-
-    axum::serve(listener, app).await.unwrap();
+    Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await?;
 
     Ok(())
-}
-
-async fn hello_world() -> String {
-    "Hello, world!".to_string()
 }
