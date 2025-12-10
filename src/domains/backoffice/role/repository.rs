@@ -1,7 +1,7 @@
+use super::model::Role;
+use crate::common::error::AppError;
 use async_trait::async_trait;
 use uuid::Uuid;
-use crate::common::error::AppError;
-use super::model::Role;
 
 #[async_trait]
 pub trait RoleRepository: Send + Sync {

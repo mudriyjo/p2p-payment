@@ -1,6 +1,6 @@
+use crate::domains::backoffice::domain::model::User;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use crate::domains::backoffice::domain::model::User;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoleInfo {
@@ -71,11 +71,10 @@ pub struct DeleteUserRequest {
     pub password_confirmation: Option<String>,
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domains::backoffice::role::model::{Role, user_role_id};
+    use crate::domains::backoffice::role::model::{user_role_id, Role};
     use chrono::Utc;
 
     #[test]

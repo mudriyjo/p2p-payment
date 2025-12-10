@@ -109,7 +109,13 @@ mod tests {
 
     #[test]
     fn test_role_constants() {
-        assert_eq!(admin_role_id().to_string(), "878c19c6-643b-4a57-98f1-a60786a38a92");
-        assert_eq!(user_role_id().to_string(), "eec86d00-495c-490c-b151-b9d33672a681");
+        assert_eq!(
+            admin_role_id().to_string(),
+            "878c19c6-643b-4a57-98f1-a60786a38a92"
+        );
+        assert_eq!(
+            user_role_id().to_string(),
+            "eec86d00-495c-490c-b151-b9d33672a681"
+        );
     }
 }

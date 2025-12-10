@@ -23,7 +23,7 @@ pub mod infra {
 
 pub mod role;
 
-pub use api::router::{public_user_routes, protected_user_routes};//, UserApiDoc};
+pub use api::router::{protected_user_routes, public_user_routes}; //, UserApiDoc};
 pub use domain::repository::UserRepository;
 pub use infra::user_repository::PostgresUserRepository;
-pub use role::{RoleRepository, PostgresRoleRepository};
+pub use role::{PostgresRoleRepository, RoleRepository};

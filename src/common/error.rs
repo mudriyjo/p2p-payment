@@ -1,6 +1,6 @@
 use axum::{
-    response::{IntoResponse, Response},
     http::StatusCode,
+    response::{IntoResponse, Response},
     Json,
 };
 use thiserror::Error;
@@ -60,11 +60,7 @@ impl IntoResponse for AppError {
 
         tracing::error!("Error occurred: {} (status: {})", message, status_code);
 
-        let response = ApiResponse::<()>::with_status(
-            status_code.as_u16(),
-            message,
-            None,
-        );
+        let response = ApiResponse::<()>::with_status(status_code.as_u16(), message, None);
 
         (status_code, Json(response)).into_response()
     }
@@ -75,15 +71,11 @@ impl From<sqlx::Error> for AppError {
         tracing::error!("Database error: {:?}", err);
 
         match err {
-            sqlx::Error::RowNotFound => {
-                AppError::NotFound("Record not found".to_string())
-            }
+            sqlx::Error::RowNotFound => AppError::NotFound("Record not found".to_string()),
             sqlx::Error::Database(db_err) => {
                 if let Some(code) = db_err.code() {
                     if code == "23505" {
-                        return AppError::DatabaseError(
-                            "Record already exists".to_string()
-                        );
+                        return AppError::DatabaseError("Record already exists".to_string());
                     }
                 }
                 AppError::DatabaseError(db_err.message().to_string())
@@ -98,12 +90,8 @@ impl From<sea_orm::DbErr> for AppError {
         tracing::error!("Database error: {:?}", err);
 
         match err {
-            sea_orm::DbErr::RecordNotFound(_) => {
-                AppError::NotFound("Record not found".to_string())
-            }
-            sea_orm::DbErr::Query(runtime_err) => {
-                AppError::DatabaseError(runtime_err.to_string())
-            }
+            sea_orm::DbErr::RecordNotFound(_) => AppError::NotFound("Record not found".to_string()),
+            sea_orm::DbErr::Query(runtime_err) => AppError::DatabaseError(runtime_err.to_string()),
             sea_orm::DbErr::Conn(runtime_err) => {
                 AppError::DatabaseError(format!("Connection error: {}", runtime_err))
             }
@@ -125,7 +113,6 @@ impl From<bcrypt::BcryptError> for AppError {
         AppError::InternalError(format!("Password hashing error: {}", err))
     }
 }
-
 
 #[cfg(test)]
 mod tests {

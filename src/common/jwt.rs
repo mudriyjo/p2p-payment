@@ -1,8 +1,8 @@
+use crate::common::error::AppError;
 use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::common::error::AppError;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Claims {
     pub sub: String,
@@ -60,7 +60,12 @@ impl JwtService {
         }
     }
 
-    pub fn encode_token(&self, user_id: Uuid, role_id: Uuid, role_name: String) -> Result<String, AppError> {
+    pub fn encode_token(
+        &self,
+        user_id: Uuid,
+        role_id: Uuid,
+        role_name: String,
+    ) -> Result<String, AppError> {
         let claims = Claims::new(user_id, role_id, role_name, 24);
         let token = encode(&Header::default(), &claims, &self.encoding_key)?;
         Ok(token)
@@ -79,11 +84,7 @@ impl JwtService {
     }
 
     pub fn decode_token(&self, token: &str) -> Result<Claims, AppError> {
-        let token_data = decode::<Claims>(
-            token,
-            &self.decoding_key,
-            &self.validation,
-        )?;
+        let token_data = decode::<Claims>(token, &self.decoding_key, &self.validation)?;
 
         if token_data.claims.is_expired() {
             return Err(AppError::Unauthorized("Token has expired".to_string()));
@@ -114,7 +115,9 @@ mod tests {
         let user_id = Uuid::new_v4();
         let role_id = test_role_id();
 
-        let token = jwt_service.encode_token(user_id, role_id, "User".to_string()).unwrap();
+        let token = jwt_service
+            .encode_token(user_id, role_id, "User".to_string())
+            .unwrap();
         assert!(!token.is_empty());
 
         let claims = jwt_service.decode_token(&token).unwrap();
@@ -140,7 +143,9 @@ mod tests {
 
         let user_id = Uuid::new_v4();
         let role_id = test_role_id();
-        let token = jwt_service1.encode_token(user_id, role_id, "User".to_string()).unwrap();
+        let token = jwt_service1
+            .encode_token(user_id, role_id, "User".to_string())
+            .unwrap();
 
         let result = jwt_service2.decode_token(&token);
         assert!(result.is_err());

@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
 use axum::{
-    response::{IntoResponse, Response},
     http::StatusCode,
+    response::{IntoResponse, Response},
     Json,
 };
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApiResponse<T> {
@@ -43,8 +43,8 @@ pub struct RestApiResponse<T>(pub ApiResponse<T>);
 
 impl<T: Serialize> IntoResponse for RestApiResponse<T> {
     fn into_response(self) -> Response {
-        let status_code = StatusCode::from_u16(self.0.status)
-            .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let status_code =
+            StatusCode::from_u16(self.0.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
 
         (status_code, Json(self.0)).into_response()
     }

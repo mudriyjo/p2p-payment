@@ -1,21 +1,16 @@
+use crate::common::{app_state::AppState, dto::ApiResponse, error::AppError, jwt::Claims};
+use crate::domains::backoffice::dto::user_dto::{
+    // UpdateUserRequest,
+    ListUsersQuery,
+    // DeleteUserRequest,
+    UserResponse,
+};
 use axum::{
     extract::{Extension, Path, Query},
     Json,
 };
 use std::sync::Arc;
 use uuid::Uuid;
-use crate::common::{
-    app_state::AppState,
-    dto::ApiResponse,
-    error::AppError,
-    jwt::Claims,
-};
-use crate::domains::backoffice::dto::user_dto::{
-    UserResponse, 
-    // UpdateUserRequest, 
-    ListUsersQuery,
-    // DeleteUserRequest,
-};
 
 pub async fn get_user(
     Extension(state): Extension<Arc<AppState>>,
@@ -60,10 +55,7 @@ pub async fn list_users(
             .await?
     };
 
-    let response: Vec<UserResponse> = users
-        .into_iter()
-        .map(UserResponse::from)
-        .collect();
+    let response: Vec<UserResponse> = users.into_iter().map(UserResponse::from).collect();
 
     Ok(Json(ApiResponse::success(response)))
 }

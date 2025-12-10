@@ -39,10 +39,7 @@ mod tests {
         assert!(json.contains(&now.to_rfc3339()));
 
         let deserialized: TestStruct = serde_json::from_str(&json).unwrap();
-        
-        assert_eq!(
-            deserialized.timestamp.timestamp(),
-            now.timestamp()
-        );
+
+        assert_eq!(deserialized.timestamp.timestamp(), now.timestamp());
     }
 }

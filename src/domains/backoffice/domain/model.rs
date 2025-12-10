@@ -1,7 +1,7 @@
+use super::super::role::model::Role;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use super::super::role::model::Role;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct User {
@@ -16,12 +16,7 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(
-        username: String,
-        email: String,
-        password_hash: String,
-        role: Role,
-    ) -> Self {
+    pub fn new(username: String, email: String, password_hash: String, role: Role) -> Self {
         let now = Utc::now();
         Self {
             id: Uuid::new_v4(),
@@ -74,8 +69,8 @@ impl User {
 
 #[cfg(test)]
 mod tests {
+    use super::super::super::role::model::{admin_role_id, user_role_id};
     use super::*;
-    use super::super::super::role::model::{user_role_id, admin_role_id};
 
     fn create_test_user_role() -> Role {
         Role::new(

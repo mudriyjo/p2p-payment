@@ -1,15 +1,15 @@
-use async_trait::async_trait;
-use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, QueryOrder, QuerySelect, Set, ActiveModelTrait, PaginatorTrait};
-use uuid::Uuid;
-use chrono::Utc;
-use crate::common::error::AppError;
-use crate::domains::backoffice::domain::{
-    model::User,
-    repository::UserRepository,
-};
-use crate::domains::backoffice::role::model::Role;
-use super::user_entity::{self, Entity as UserEntity};
 use super::super::role::entity::{self as role_entity, Entity as RoleEntity};
+use super::user_entity::{self, Entity as UserEntity};
+use crate::common::error::AppError;
+use crate::domains::backoffice::domain::{model::User, repository::UserRepository};
+use crate::domains::backoffice::role::model::Role;
+use async_trait::async_trait;
+use chrono::Utc;
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
+    QueryOrder, QuerySelect, Set,
+};
+use uuid::Uuid;
 
 pub struct PostgresUserRepository {
     db: DatabaseConnection,
@@ -95,8 +95,6 @@ impl UserRepository for PostgresUserRepository {
         }
     }
 
-
-
     async fn exists_by_username(&self, username: &str) -> Result<bool, AppError> {
         let count = UserEntity::find()
             .filter(user_entity::Column::Username.eq(username))
@@ -168,8 +166,9 @@ impl UserRepository for PostgresUserRepository {
         let results = UserEntity::find()
             .find_also_related(RoleEntity)
             .filter(
-                user_entity::Column::Username.like(&search_pattern)
-                    .or(user_entity::Column::Email.like(&search_pattern))
+                user_entity::Column::Username
+                    .like(&search_pattern)
+                    .or(user_entity::Column::Email.like(&search_pattern)),
             )
             .order_by_asc(user_entity::Column::Username)
             .limit(limit as u64)

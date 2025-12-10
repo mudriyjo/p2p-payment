@@ -1,6 +1,6 @@
-use std::sync::Arc;
 use color_eyre::eyre::Result;
 use p2p_payment::{app::create_app, common::bootstrap};
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<()> {

@@ -2,10 +2,13 @@ use std::sync::Arc;
 
 use uuid::Uuid;
 
-use crate::{common::error::AppError, domains::backoffice::{UserRepository, domain::model::User}};
+use crate::{
+    common::error::AppError,
+    domains::backoffice::{domain::model::User, UserRepository},
+};
 
 pub struct GetUserInfoUseCase {
-    user_repository: Arc<dyn UserRepository>
+    user_repository: Arc<dyn UserRepository>,
 }
 
 impl GetUserInfoUseCase {
@@ -31,7 +34,6 @@ impl GetUserInfoUseCase {
             self.check_access_permission(req_id, &user).await?;
         }
 
-
         Ok(user)
     }
 
@@ -45,11 +47,7 @@ impl GetUserInfoUseCase {
     }
 
     /// Получить список пользователей с фильтрацией
-    pub async fn list(
-        &self,
-        limit: i64,
-        offset: i64,
-    ) -> Result<Vec<User>, AppError> {
+    pub async fn list(&self, limit: i64, offset: i64) -> Result<Vec<User>, AppError> {
         tracing::debug!("Listing users with limit={}, offset={}", limit, offset);
 
         if limit > 100 {
@@ -62,11 +60,7 @@ impl GetUserInfoUseCase {
     }
 
     /// Поиск пользователей
-    pub async fn search(
-        &self,
-        query: &str,
-        limit: Option<i64>,
-    ) -> Result<Vec<User>, AppError> {
+    pub async fn search(&self, query: &str, limit: Option<i64>) -> Result<Vec<User>, AppError> {
         let search_limit = limit.unwrap_or(20);
 
         if search_limit > 100 {
@@ -75,7 +69,11 @@ impl GetUserInfoUseCase {
             ));
         }
 
-        tracing::debug!("Searching users with query='{}', limit={}", query, search_limit);
+        tracing::debug!(
+            "Searching users with query='{}', limit={}",
+            query,
+            search_limit
+        );
 
         self.user_repository.search(query, search_limit).await
     }

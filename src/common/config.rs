@@ -1,10 +1,12 @@
 use color_eyre::eyre::Result;
-use figment::{Figment, providers::Env};
+use figment::{providers::Env, Figment};
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Config {
+    pub environment: Environment,
+
     pub database_url: String,
     pub database_max_connections: u32,
     pub database_min_connections: u32,
@@ -14,13 +16,58 @@ pub struct Config {
 
     pub logging_level: String,
     pub jwt_secret_key: String,
+
+    pub cors: CorsConfig,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Environment {
+    Development,
+    Staging,
+    Production,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct CorsConfig {
+    pub allow_origin: String,
+    pub allow_methods: String,
+    pub allow_headers: String,
+    pub allow_credentials: bool,
+    pub max_age: u64,
+}
+
+impl CorsConfig {
+    pub fn parse_origins(&self) -> Vec<String> {
+        self.parse_separator_helper(&self.allow_origin)
+    }
+
+    pub fn parse_methods(&self) -> Vec<String> {
+        self.parse_separator_helper(&self.allow_methods)
+    }
+
+    pub fn parse_headers(&self) -> Vec<String> {
+        self.parse_separator_helper(&self.allow_headers)
+    }
+
+    fn parse_separator_helper(&self, paramters: &str) -> Vec<String> {
+        paramters
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect()
+    }
 }
 
 impl Config {
     pub fn from_env() -> Result<Self> {
         dotenvy::dotenv().ok();
 
-        let config: Config = Figment::new().merge(Env::prefixed("P2P_APP_")).extract()?;
+        // Use __ (double underscore) as the delimiter for nested structures
+        // Example: CORS__ALLOW_ORIGIN becomes cors.allow_origin
+        let config: Config = Figment::new()
+            .merge(Env::prefixed("P2P_APP_").split("__"))
+            .extract()?;
 
         Ok(config)
     }

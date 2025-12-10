@@ -1,11 +1,11 @@
-use async_trait::async_trait;
-use sea_orm::{DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, QueryOrder};
-use uuid::Uuid;
-use chrono::Utc;
-use crate::common::error::AppError;
+use super::entity::{self, Entity as RoleEntity};
 use super::model::Role;
 use super::repository::RoleRepository;
-use super::entity::{self, Entity as RoleEntity};
+use crate::common::error::AppError;
+use async_trait::async_trait;
+use chrono::Utc;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder};
+use uuid::Uuid;
 
 pub struct PostgresRoleRepository {
     db: DatabaseConnection,
@@ -30,9 +30,7 @@ impl PostgresRoleRepository {
 #[async_trait]
 impl RoleRepository for PostgresRoleRepository {
     async fn find_by_id(&self, role_id: Uuid) -> Result<Option<Role>, AppError> {
-        let role = RoleEntity::find_by_id(role_id)
-            .one(&self.db)
-            .await?;
+        let role = RoleEntity::find_by_id(role_id).one(&self.db).await?;
 
         Ok(role.map(Self::entity_to_domain))
     }

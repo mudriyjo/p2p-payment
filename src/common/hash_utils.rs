@@ -1,5 +1,5 @@
-use bcrypt::{hash, verify, DEFAULT_COST};
 use crate::common::error::AppError;
+use bcrypt::{hash, verify, DEFAULT_COST};
 
 pub fn hash_password(password: &str) -> Result<String, AppError> {
     let hashed = hash(password, DEFAULT_COST)?;
@@ -28,10 +28,10 @@ mod tests {
     #[test]
     fn test_different_hashes_for_same_password() {
         let password = "test123";
-        
+
         let hash1 = hash_password(password).unwrap();
         let hash2 = hash_password(password).unwrap();
-        
+
         assert_ne!(hash1, hash2);
         assert!(verify_password(password, &hash1).unwrap());
         assert!(verify_password(password, &hash2).unwrap());

@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use sea_orm::DatabaseConnection;
+use std::sync::Arc;
 
 // Repositories
 use crate::domains::backoffice::domain::repository::UserRepository;
@@ -29,14 +29,11 @@ impl AppState {
         let user_repository: Arc<dyn UserRepository> =
             Arc::new(PostgresUserRepository::new(db.clone()));
 
-        let role_repository: Arc<dyn RoleRepository> =
-            Arc::new(PostgresRoleRepository::new(db));
+        let role_repository: Arc<dyn RoleRepository> = Arc::new(PostgresRoleRepository::new(db));
 
         let jwt_service = Arc::new(JwtService::new(&config.jwt_secret_key));
 
-        let user_get_use_case = Arc::new(GetUserInfoUseCase::new(
-            Arc::clone(&user_repository),
-        ));
+        let user_get_use_case = Arc::new(GetUserInfoUseCase::new(Arc::clone(&user_repository)));
 
         // let user_update_profile_use_case = Arc::new(UpdateProfileUseCase::new(
         //     Arc::clone(&user_repository),

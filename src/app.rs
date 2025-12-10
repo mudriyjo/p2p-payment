@@ -1,36 +1,57 @@
+use crate::common::{dto::ApiResponse, AppState};
 use axum::{
-    Router,
-    routing::get,
-    http::{StatusCode, Method},
+    http::{HeaderName, Method, StatusCode},
     response::{IntoResponse, Response},
-    Json,
+    routing::get,
+    Json, Router,
 };
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc, time::Duration};
 use tower_http::{
-    cors::{CorsLayer, Any},
+    cors::{AllowOrigin, CorsLayer},
     trace::TraceLayer,
 };
-use crate::common::{AppState, dto::ApiResponse};
 
 pub fn create_app(state: Arc<AppState>) -> Router {
-    // TODO: use configuration domain for CORS configuration
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods([
-            Method::GET,
-            Method::POST,
-            Method::PUT,
-            Method::PATCH,
-            Method::DELETE,
-        ])
-        .allow_headers(Any);
+    let cors = configure_cors(&state);
 
     Router::new()
         .route("/health", get(health_check))
-        .nest("/api", api_routes(Arc::clone(&state)))   
+        .nest("/api/v1/", api_routes(Arc::clone(&state)))
         .layer(cors)
         .layer(TraceLayer::new_for_http())
         .fallback(handler_404)
+}
+
+fn parse_cors_helper<T: FromStr>(parameters: Vec<String>) -> Vec<T> {
+    parameters
+        .into_iter()
+        .filter_map(|param| param.parse::<T>().ok())
+        .collect()
+}
+
+fn configure_cors(state: &AppState) -> CorsLayer {
+    let config = &state.config.cors;
+
+    // Parse origins
+    let origins: Vec<_> = parse_cors_helper(config.parse_origins());
+
+    // Parse methods
+    let methods: Vec<Method> = parse_cors_helper(config.parse_methods());
+
+    // Parse headers
+    let headers: Vec<HeaderName> = parse_cors_helper(config.parse_headers());
+
+    let mut cors = CorsLayer::new()
+        .allow_origin(AllowOrigin::list(origins))
+        .allow_methods(methods)
+        .allow_headers(headers)
+        .max_age(Duration::from_secs(config.max_age));
+
+    if config.allow_credentials {
+        cors = cors.allow_credentials(true);
+    }
+
+    cors
 }
 
 fn api_routes(state: Arc<AppState>) -> Router {
@@ -56,11 +77,7 @@ struct HealthResponse {
 }
 
 async fn handler_404() -> Response {
-    let response = ApiResponse::<()>::with_status(
-        404,
-        "Not found",
-        None,
-    );
+    let response = ApiResponse::<()>::with_status(404, "Not found", None);
 
     (StatusCode::NOT_FOUND, Json(response)).into_response()
 }

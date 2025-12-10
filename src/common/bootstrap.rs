@@ -1,19 +1,23 @@
-use color_eyre::eyre::Result;
-use sea_orm::DatabaseConnection;
-use migration::MigratorTrait;
-use std::sync::Arc;
 use crate::common::{AppState, Config};
+use color_eyre::eyre::Result;
+use migration::MigratorTrait;
+use sea_orm::DatabaseConnection;
+use std::sync::Arc;
 
 pub async fn initialize_app() -> Result<Arc<AppState>> {
-
     tracing::info!("Loading configuration...");
     let config = Config::from_env()?;
     tracing::info!("Configuration loaded successfully");
 
     tracing_subscriber::fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::from_default_env()
-                .add_directive(config.logging_level.parse().unwrap_or(tracing::Level::INFO).into()),
+            tracing_subscriber::EnvFilter::from_default_env().add_directive(
+                config
+                    .logging_level
+                    .parse()
+                    .unwrap_or(tracing::Level::INFO)
+                    .into(),
+            ),
         )
         .init();
 
@@ -36,7 +40,6 @@ pub async fn initialize_app() -> Result<Arc<AppState>> {
     tracing::info!("Application initialization complete");
     Ok(state)
 }
-
 
 async fn verify_database_connection(db: &DatabaseConnection) -> Result<()> {
     use sea_orm::ConnectionTrait;
