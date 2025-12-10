@@ -1,6 +1,7 @@
 use crate::domains::backoffice::domain::model::User;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoleInfo {
@@ -45,12 +46,14 @@ pub struct CreateUserRequest {
     pub username: String,
     pub email: String,
     pub password: String,
+    pub role_id: Uuid,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UpdateUserRequest {
     pub username: Option<String>,
     pub email: Option<String>,
+    pub role_id: Option<Uuid>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

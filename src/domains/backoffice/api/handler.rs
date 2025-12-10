@@ -1,9 +1,6 @@
 use crate::common::{app_state::AppState, dto::ApiResponse, error::AppError, jwt::Claims};
 use crate::domains::backoffice::dto::user_dto::{
-    // UpdateUserRequest,
-    ListUsersQuery,
-    // DeleteUserRequest,
-    UserResponse,
+    CreateUserRequest, ListUsersQuery, UpdateUserRequest, UserResponse,
 };
 use axum::{
     extract::{Extension, Path, Query},
@@ -17,10 +14,7 @@ pub async fn get_user(
     Extension(claims): Extension<Claims>,
     Path(user_id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<UserResponse>>, AppError> {
-    let user = state
-        .user_get_use_case
-        .execute(user_id, Some(claims.user_id))
-        .await?;
+    let user = state.user_get_use_case.execute(user_id).await?;
 
     let response = UserResponse::from(user);
 
@@ -31,10 +25,7 @@ pub async fn get_current_user(
     Extension(state): Extension<Arc<AppState>>,
     Extension(claims): Extension<Claims>,
 ) -> Result<Json<ApiResponse<UserResponse>>, AppError> {
-    let user = state
-        .user_get_use_case
-        .execute(claims.user_id, Some(claims.user_id))
-        .await?;
+    let user = state.user_get_use_case.execute(claims.user_id).await?;
 
     Ok(Json(ApiResponse::success(UserResponse::from(user))))
 }
@@ -60,35 +51,30 @@ pub async fn list_users(
     Ok(Json(ApiResponse::success(response)))
 }
 
-// pub async fn update_user(
-//     Extension(state): Extension<Arc<AppState>>,
-//     Extension(claims): Extension<Claims>,
-//     Path(user_id): Path<Uuid>,
-//     Json(request): Json<UpdateUserRequest>,
-// ) -> Result<Json<ApiResponse<UserResponse>>, AppError> {
-//     let update_request = UpdateUserRequest {
-//         username: request.username,
-//         email: request.email,
-//     };
+pub async fn create_user(
+    Extension(state): Extension<Arc<AppState>>,
+    Json(request): Json<CreateUserRequest>,
+) -> Result<Json<ApiResponse<UserResponse>>, AppError> {
+    let user = state.user_create_use_case.execute(request).await?;
 
-//     let user = state
-//         .user_update_profile_use_case
-//         .execute(user_id, claims.user_id, update_request)
-//         .await?;
+    Ok(Json(ApiResponse::success(UserResponse::from(user))))
+}
 
-//     Ok(Json(ApiResponse::success(UserResponse::from(user))))
-// }
+pub async fn update_user(
+    Extension(state): Extension<Arc<AppState>>,
+    Path(user_id): Path<Uuid>,
+    Json(request): Json<UpdateUserRequest>,
+) -> Result<Json<ApiResponse<UserResponse>>, AppError> {
+    let user = state.user_update_use_case.execute(user_id, request).await?;
 
-// pub async fn delete_user(
-//     Extension(state): Extension<Arc<AppState>>,
-//     Extension(claims): Extension<Claims>,
-//     Path(user_id): Path<Uuid>,
-//     Json(request): Json<DeleteUserRequest>,
-// ) -> Result<Json<ApiResponse<()>>, AppError> {
-//     state
-//         .user_delete_use_case
-//         .execute(user_id, claims.user_id, request.password_confirmation)
-//         .await?;
+    Ok(Json(ApiResponse::success(UserResponse::from(user))))
+}
 
-//     Ok(Json(ApiResponse::success(())))
-// }
+pub async fn delete_user(
+    Extension(state): Extension<Arc<AppState>>,
+    Path(user_id): Path<Uuid>,
+) -> Result<Json<ApiResponse<()>>, AppError> {
+    state.user_delete_use_case.execute(user_id).await?;
+
+    Ok(Json(ApiResponse::success(())))
+}

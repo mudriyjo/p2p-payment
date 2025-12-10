@@ -16,12 +16,8 @@ impl GetUserInfoUseCase {
         Self { user_repository }
     }
 
-    pub async fn execute(
-        &self,
-        user_id: Uuid,
-        requester_id: Option<Uuid>, // Кто запрашивает
-    ) -> Result<User, AppError> {
-        tracing::debug!("Fetching user {} by requester {:?}", user_id, requester_id);
+    pub async fn execute(&self, user_id: Uuid) -> Result<User, AppError> {
+        tracing::debug!("Fetching user {}", user_id);
 
         let user = self
             .user_repository
@@ -32,7 +28,6 @@ impl GetUserInfoUseCase {
         Ok(user)
     }
 
-    /// Получить список пользователей с фильтрацией
     pub async fn list(&self, limit: i64, offset: i64) -> Result<Vec<User>, AppError> {
         tracing::debug!("Listing users with limit={}, offset={}", limit, offset);
 
@@ -45,7 +40,6 @@ impl GetUserInfoUseCase {
         self.user_repository.list(limit, offset).await
     }
 
-    /// Поиск пользователей
     pub async fn search(&self, query: &str, limit: Option<i64>) -> Result<Vec<User>, AppError> {
         let search_limit = limit.unwrap_or(20);
 

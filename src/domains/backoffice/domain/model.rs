@@ -56,6 +56,11 @@ impl User {
         self.updated_at = Utc::now();
     }
 
+    pub fn update_role(&mut self, role: Role) {
+        self.role = role;
+        self.updated_at = Utc::now();
+    }
+
     pub fn deactivate(&mut self) {
         self.is_active = false;
         self.updated_at = Utc::now();

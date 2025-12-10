@@ -8,7 +8,10 @@ use crate::domains::backoffice::role::repository::RoleRepository;
 use crate::domains::backoffice::role::repository_impl::PostgresRoleRepository;
 
 // User Use Cases
+use crate::domains::backoffice::app::create_user_use_case::CreateUserUseCase;
+use crate::domains::backoffice::app::delete_user_use_case::DeleteUserUseCase;
 use crate::domains::backoffice::app::get_user_info_use_case::GetUserInfoUseCase;
+use crate::domains::backoffice::app::update_user_use_case::UpdateUserUseCase;
 
 // Services
 use crate::common::jwt::JwtService;
@@ -20,8 +23,9 @@ pub struct AppState {
     pub role_repository: Arc<dyn RoleRepository>,
     pub jwt_service: Arc<JwtService>,
     pub user_get_use_case: Arc<GetUserInfoUseCase>,
-    // pub user_update_profile_use_case: Arc<UpdateProfileUseCase>,
-    // pub user_delete_use_case: Arc<DeleteUserUseCase>,
+    pub user_create_use_case: Arc<CreateUserUseCase>,
+    pub user_update_use_case: Arc<UpdateUserUseCase>,
+    pub user_delete_use_case: Arc<DeleteUserUseCase>,
 }
 
 impl AppState {
@@ -35,13 +39,17 @@ impl AppState {
 
         let user_get_use_case = Arc::new(GetUserInfoUseCase::new(Arc::clone(&user_repository)));
 
-        // let user_update_profile_use_case = Arc::new(UpdateProfileUseCase::new(
-        //     Arc::clone(&user_repository),
-        // ));
+        let user_create_use_case = Arc::new(CreateUserUseCase::new(
+            Arc::clone(&user_repository),
+            Arc::clone(&role_repository),
+        ));
 
-        // let user_delete_use_case = Arc::new(DeleteUserUseCase::new(
-        //     Arc::clone(&user_repository)
-        // ));
+        let user_update_use_case = Arc::new(UpdateUserUseCase::new(
+            Arc::clone(&user_repository),
+            Arc::clone(&role_repository),
+        ));
+
+        let user_delete_use_case = Arc::new(DeleteUserUseCase::new(Arc::clone(&user_repository)));
 
         Self {
             config,
@@ -49,8 +57,9 @@ impl AppState {
             role_repository,
             jwt_service,
             user_get_use_case,
-            // user_update_profile_use_case,
-            // user_delete_use_case,
+            user_create_use_case,
+            user_update_use_case,
+            user_delete_use_case,
         }
     }
 }

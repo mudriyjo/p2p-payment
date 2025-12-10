@@ -58,7 +58,6 @@ fn api_routes(state: Arc<AppState>) -> Router {
     use axum::Extension;
 
     Router::new()
-        .merge(crate::domains::backoffice::public_user_routes())
         .merge(crate::domains::backoffice::protected_user_routes())
         .layer(Extension(state))
 }
