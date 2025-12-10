@@ -4,8 +4,9 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ApiResponse<T> {
     pub status: u16,
     pub message: String,

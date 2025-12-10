@@ -45,8 +45,8 @@ tracing-subscriber = "0.3.20"
 thiserror = "2.0.17"
 
 # API Documentation
-utoipa = "5.4.0"
-utoipa-swagger-ui = "9.0.2"
+utoipa = { version = "5.4.0", features = ["uuid", "chrono"] }
+utoipa-swagger-ui = {version = "9.0.2", features = ["axum"]}
 
 
 [dev-dependencies]

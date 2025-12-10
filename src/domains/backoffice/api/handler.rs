@@ -6,12 +6,50 @@ use axum::{
     extract::{Extension, Path, Query},
     Json,
 };
+
 use std::sync::Arc;
 use uuid::Uuid;
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/user/{id}",
+    params(
+        ("id" = Uuid, Path, description = "User ID to fetch")
+    ),
+    responses(
+        (status = 200, description = "User found successfully", body = inline(ApiResponse<UserResponse>),
+         example = json!({
+             "status": 200,
+             "message": "success",
+             "data": {
+                 "id": "550e8400-e29b-41d4-a716-446655440000",
+                 "username": "john_doe",
+                 "email": "john@example.com",
+                 "is_active": true,
+                 "role": {
+                     "role_id": "878c19c6-643b-4a57-98f1-a60786a38a92",
+                     "role_name": "Admin",
+                     "role_description": "Administrator with full access"
+                 },
+                 "created_at": "2024-12-10T10:30:00Z",
+                 "updated_at": "2024-12-10T10:30:00Z"
+             }
+         })
+        ),
+        (status = 401, description = "Missing or invalid JWT token"),
+        (status = 403, description = "Insufficient permissions"),
+        (status = 404, description = "User not found")
+    ),
+    security(
+        ("jwt_token" = [])
+    ),
+    tag = "Users",
+    summary = "Get user by ID",
+    description = "Retrieves a user's information by their unique ID. Requires authentication with a valid JWT token. User information includes role details."
+)]
 pub async fn get_user(
     Extension(state): Extension<Arc<AppState>>,
-    Extension(claims): Extension<Claims>,
+    Extension(_claims): Extension<Claims>,
     Path(user_id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<UserResponse>>, AppError> {
     let user = state.user_get_use_case.execute(user_id).await?;

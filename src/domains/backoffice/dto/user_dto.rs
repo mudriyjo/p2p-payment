@@ -1,16 +1,17 @@
 use crate::domains::backoffice::domain::model::User;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct RoleInfo {
     pub role_id: String,
     pub role_name: String,
     pub role_description: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct UserResponse {
     pub id: String,
     pub username: String,

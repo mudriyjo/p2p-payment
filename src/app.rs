@@ -1,4 +1,5 @@
 use crate::common::{dto::ApiResponse, AppState};
+use crate::domains::backoffice::UserApiDoc;
 use axum::{
     http::{HeaderName, Method, StatusCode},
     response::{IntoResponse, Response},
@@ -10,13 +11,16 @@ use tower_http::{
     cors::{AllowOrigin, CorsLayer},
     trace::TraceLayer,
 };
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 pub fn create_app(state: Arc<AppState>) -> Router {
     let cors = configure_cors(&state);
 
     Router::new()
         .route("/health", get(health_check))
-        .nest("/api/v1/", api_routes(Arc::clone(&state)))
+        .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", UserApiDoc::openapi()))
+        .nest("/api/v1", api_routes(Arc::clone(&state)))
         .layer(cors)
         .layer(TraceLayer::new_for_http())
         .fallback(handler_404)
