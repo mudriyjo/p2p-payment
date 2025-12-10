@@ -29,21 +29,7 @@ impl GetUserInfoUseCase {
             .await?
             .ok_or(AppError::NotFound(format!("User {} not found", user_id)))?;
 
-        // TODO: change to real check
-        if let Some(req_id) = requester_id {
-            self.check_access_permission(req_id, &user).await?;
-        }
-
         Ok(user)
-    }
-
-    async fn check_access_permission(
-        &self,
-        requester_id: Uuid,
-        target_user: &User,
-    ) -> Result<(), AppError> {
-        // TODO: implement logic
-        Ok(())
     }
 
     /// Получить список пользователей с фильтрацией
