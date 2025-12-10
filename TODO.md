@@ -1,5 +1,5 @@
 # TODO List
-0. Fix all TODOs
+0. Fix all TODOs - *DONE*
 1. Finalize User API (CRUD + listing)
 2. Refactor Roles to same structure as User not sub domain + finalize API and routes to work with Roles
 3. Prepare Swagger documentation for API
