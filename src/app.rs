@@ -67,36 +67,14 @@ fn api_routes(state: Arc<AppState>) -> Router {
 }
 
 async fn health_check() -> impl IntoResponse {
-    Json(ApiResponse::success(HealthResponse {
-        status: "Ok".to_string(),
-        version: env!("CARGO_PKG_VERSION").to_string(),
-    }))
-}
-
-#[derive(serde::Serialize)]
-struct HealthResponse {
-    status: String,
-    version: String,
+      Json(serde_json::json!({
+          "status": "Ok",
+          "version": env!("CARGO_PKG_VERSION")
+      }))
 }
 
 async fn handler_404() -> Response {
     let response = ApiResponse::<()>::with_status(404, "Not found", None);
 
     (StatusCode::NOT_FOUND, Json(response)).into_response()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_health_response_structure() {
-        let response = HealthResponse {
-            status: "Ok".to_string(),
-            version: "1.0.0".to_string(),
-        };
-
-        assert_eq!(response.status, "Ok");
-        assert_eq!(response.version, "1.0.0");
-    }
 }

@@ -101,6 +101,29 @@ impl JwtService {
     }
 }
 
+pub struct SecurityAddon;
+
+impl utoipa::Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        if let Some(components) = openapi.components.as_mut() {
+            use utoipa::openapi::security::{ApiKey, ApiKeyValue, SecurityScheme};
+
+            let mut security_scheme = SecurityScheme::ApiKey(
+                ApiKey::Header(ApiKeyValue::new("X-JWT-Token"))
+            );
+
+            // Add description to the security scheme
+            if let SecurityScheme::ApiKey(api_key) = &mut security_scheme {
+                *api_key = ApiKey::Header(
+                    ApiKeyValue::with_description("X-JWT-Token", "JWT token for authentication. Click 'Authorize' button above to add your token.")
+                );
+            }
+
+            components.add_security_scheme("jwt_token", security_scheme);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
