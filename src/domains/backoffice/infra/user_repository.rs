@@ -148,7 +148,7 @@ impl UserRepository for PostgresUserRepository {
     async fn list(&self, limit: i64, offset: i64) -> Result<Vec<User>, AppError> {
         let results = UserEntity::find()
             .find_also_related(RoleEntity)
-            .order_by_desc(user_entity::Column::CreatedAt)
+            .order_by_desc(user_entity::Column::Id)
             .limit(limit as u64)
             .offset(offset as u64)
             .all(&self.db)
@@ -170,7 +170,7 @@ impl UserRepository for PostgresUserRepository {
                     .like(&search_pattern)
                     .or(user_entity::Column::Email.like(&search_pattern)),
             )
-            .order_by_asc(user_entity::Column::Username)
+            .order_by_asc(user_entity::Column::Id)
             .limit(limit as u64)
             .all(&self.db)
             .await?;

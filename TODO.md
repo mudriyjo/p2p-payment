@@ -1,6 +1,6 @@
 # TODO List
 0. Fix all TODOs - *DONE*
-1. Finalize User API (CRUD + listing)
+1. Finalize User API (CRUD + listing) - *DONE*
 2. Refactor Roles to same structure as User not sub domain + finalize API and routes to work with Roles
 3. Prepare Swagger documentation for API
 4. Prepare JWT login/logout flow for backoffice user with 2 step
