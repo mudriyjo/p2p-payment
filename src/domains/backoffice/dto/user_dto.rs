@@ -30,7 +30,6 @@ pub struct UserResponse {
     #[schema(example = "true")]
     pub is_active: bool,
 
-    #[schema(example = "{ \"role_id\": \"550e8400-e29b-41d4-a716-446655440000\", \"role_name\": \"Admin\", \"role_description\": \"Administrator role\" }")]
     pub role: RoleInfo,
 
     #[serde(with = "crate::common::time_formater")]
