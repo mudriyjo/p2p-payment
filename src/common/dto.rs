@@ -7,14 +7,18 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct ApiResponse<T> {
+pub struct ApiResponse<T : ToSchema> {
+    #[schema(example = 200)]
     pub status: u16,
+    
+    #[schema(example = "success")]
     pub message: String,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<T>,
 }
 
-impl<T> ApiResponse<T> {
+impl<T: ToSchema> ApiResponse<T> {
     pub fn success(data: T) -> Self {
         Self {
             status: 200,
@@ -40,9 +44,9 @@ impl<T> ApiResponse<T> {
     }
 }
 
-pub struct RestApiResponse<T>(pub ApiResponse<T>);
+pub struct RestApiResponse<T : ToSchema>(pub ApiResponse<T>);
 
-impl<T: Serialize> IntoResponse for RestApiResponse<T> {
+impl<T: Serialize + ToSchema> IntoResponse for RestApiResponse<T> {
     fn into_response(self) -> Response {
         let status_code =
             StatusCode::from_u16(self.0.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
@@ -51,7 +55,7 @@ impl<T: Serialize> IntoResponse for RestApiResponse<T> {
     }
 }
 
-impl<T> From<ApiResponse<T>> for RestApiResponse<T> {
+impl<T : ToSchema> From<ApiResponse<T>> for RestApiResponse<T> {
     fn from(response: ApiResponse<T>) -> Self {
         RestApiResponse(response)
     }
@@ -66,7 +70,7 @@ mod tests {
 
     #[test]
     fn test_success_response() {
-        #[derive(Serialize)]
+        #[derive(Serialize, ToSchema)]
         struct TestData {
             id: i32,
             name: String,

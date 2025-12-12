@@ -17,25 +17,7 @@ use uuid::Uuid;
         ("id" = Uuid, Path, description = "User ID to fetch")
     ),
     responses(
-        (status = 200, description = "User found successfully", body = inline(ApiResponse<UserResponse>),
-         example = json!({
-             "status": 200,
-             "message": "success",
-             "data": {
-                 "id": "550e8400-e29b-41d4-a716-446655440000",
-                 "username": "john_doe",
-                 "email": "john@example.com",
-                 "is_active": true,
-                 "role": {
-                     "role_id": "878c19c6-643b-4a57-98f1-a60786a38a92",
-                     "role_name": "Admin",
-                     "role_description": "Administrator with full access"
-                 },
-                 "created_at": "2024-12-10T10:30:00Z",
-                 "updated_at": "2024-12-10T10:30:00Z"
-             }
-         })
-        ),
+        (status = 200, description = "User found successfully", body = inline(ApiResponse<UserResponse>)),
         (status = 401, description = "Missing or invalid JWT token"),
         (status = 403, description = "Insufficient permissions"),
         (status = 404, description = "User not found")

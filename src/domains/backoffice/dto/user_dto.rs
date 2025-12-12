@@ -6,21 +6,39 @@ use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct RoleInfo {
+    #[schema(example = "550e8400-e29b-41d4-a716-446655440000")]
     pub role_id: String,
+    
+    #[schema(example = "Admin")]
     pub role_name: String,
+    
+    #[schema(example = "Administrator role")]
     pub role_description: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct UserResponse {
+    #[schema(example = "550e8400-e29b-41d4-a716-446655440000")]
     pub id: String,
+    
+    #[schema(example = "testuser")]
     pub username: String,
+    
+    #[schema(example = "test@example.com")]
     pub email: String,
+
+    #[schema(example = "true")]
     pub is_active: bool,
+
+    #[schema(example = "{ \"role_id\": \"550e8400-e29b-41d4-a716-446655440000\", \"role_name\": \"Admin\", \"role_description\": \"Administrator role\" }")]
     pub role: RoleInfo,
+
     #[serde(with = "crate::common::time_formater")]
+    #[schema(example = "2024-01-01T12:00:00Z")]
     pub created_at: DateTime<Utc>,
+    
     #[serde(with = "crate::common::time_formater")]
+    #[schema(example = "2024-01-01T12:00:00Z")]
     pub updated_at: DateTime<Utc>,
 }
 
