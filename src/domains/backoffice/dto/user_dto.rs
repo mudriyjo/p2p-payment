@@ -1,4 +1,4 @@
-use crate::domains::backoffice::domain::model::User;
+use crate::domains::backoffice::domain::user::User;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;

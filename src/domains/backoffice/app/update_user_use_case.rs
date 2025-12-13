@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::{
     common::error::AppError,
     domains::backoffice::{
-        domain::model::User, dto::user_dto::UpdateUserRequest, role::repository::RoleRepository,
+        domain::user::User, dto::user_dto::UpdateUserRequest, role::repository::RoleRepository,
         UserRepository,
     },
 };

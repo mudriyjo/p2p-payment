@@ -11,7 +11,7 @@ pub mod app {
 }
 
 pub mod domain {
-    pub mod model;
+    pub mod user;
     pub mod repository;
 }
 

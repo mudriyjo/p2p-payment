@@ -1,4 +1,4 @@
-use super::model::User;
+use super::user::User;
 use crate::common::error::AppError;
 use async_trait::async_trait;
 use uuid::Uuid;

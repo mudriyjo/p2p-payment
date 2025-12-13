@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::{
     common::{error::AppError, hash_utils::hash_password},
     domains::backoffice::{
-        domain::model::User, dto::user_dto::CreateUserRequest, role::repository::RoleRepository,
+        domain::user::User, dto::user_dto::CreateUserRequest, role::repository::RoleRepository,
         UserRepository,
     },
 };

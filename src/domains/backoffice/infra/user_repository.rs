@@ -1,7 +1,7 @@
 use super::super::role::entity::{self as role_entity, Entity as RoleEntity};
 use super::user_entity::{self, Entity as UserEntity};
 use crate::common::error::AppError;
-use crate::domains::backoffice::domain::{model::User, repository::UserRepository};
+use crate::domains::backoffice::domain::{user::User, repository::UserRepository};
 use crate::domains::backoffice::role::model::Role;
 use async_trait::async_trait;
 use chrono::Utc;

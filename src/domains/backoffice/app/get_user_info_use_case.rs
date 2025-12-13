@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::{
     common::error::AppError,
-    domains::backoffice::{domain::model::User, UserRepository},
+    domains::backoffice::{domain::user::User, UserRepository},
 };
 
 pub struct GetUserInfoUseCase {
