@@ -61,7 +61,11 @@ impl MigrationTrait for Migration {
                     .col(uuid(SiteCredentials::SiteId).not_null())
                     .col(string(SiteCredentials::PublicKey).unique_key().not_null())
                     .col(string(SiteCredentials::SecretKey).unique_key().not_null())
-                    .col(string(SiteCredentials::AllowedIps).not_null())
+                    .col(
+                        ColumnDef::new(SiteCredentials::AllowedIps)
+                            .array(ColumnType::String(StringLen::None)) 
+                            .not_null()
+                    )
                     .col(string(SiteCredentials::IsActive).not_null())
                     .col(timestamp_with_time_zone(SiteCredentials::CreatedAt).not_null())
                     .foreign_key(
